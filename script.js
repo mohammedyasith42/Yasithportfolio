@@ -1,161 +1,114 @@
-// Smooth FLIP-style animation: clone hero image, animate it to navbar avatar position.
-// Works on scroll crossing hero bottom -> navbar height.
+// Portfolio JavaScript
 
-const heroImg = document.getElementById('heroPhoto');
-const navAvatar = document.getElementById('navAvatar');
-const navbar = document.getElementById('navbar');
+document.addEventListener('DOMContentLoaded', () => {
+    const navbar = document.getElementById('navbar');
+    const heroImg = document.getElementById('heroPhoto');
+    const navAvatarSlot = document.querySelector('.nav-avatar-slot');
+    const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+    const navLinks = document.querySelector('.nav-links');
 
-let isShrunk = false;         // whether avatar is shown in navbar
-let animating = false;        // avoid double animations
+    // Navbar Scroll Effect
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 50) {
+            navbar.classList.add('scrolled');
+        } else {
+            navbar.classList.remove('scrolled');
+        }
 
-// Helper: create a positioned clone of the hero image at its current viewport coords
-function createCloneAt(rect) {
-  const clone = heroImg.cloneNode(true);
-  clone.style.position = 'fixed';
-  clone.style.left = `${rect.left}px`;
-  clone.style.top = `${rect.top}px`;
-  clone.style.width = `${rect.width}px`;
-  clone.style.height = `${rect.height}px`;
-  clone.style.borderRadius = '50%';
-  clone.style.objectFit = 'cover';
-  clone.style.zIndex = 9999;
-  clone.style.transition = 'transform 600ms cubic-bezier(.2,.8,.2,1), opacity 200ms';
-  clone.style.willChange = 'transform';
-  document.body.appendChild(clone);
-  return clone;
-}
-
-function animateToNav() {
-  if (isShrunk || animating) return;
-  const heroRect = heroImg.getBoundingClientRect();
-  const navRect = navAvatar.getBoundingClientRect();
-  animating = true;
-
-  const clone = createCloneAt(heroRect);
-  // Make original invisible while animating
-  heroImg.style.visibility = 'hidden';
-
-  // Compute center-based translation (so scale occurs from center)
-  const heroCenterX = heroRect.left + heroRect.width / 2;
-  const heroCenterY = heroRect.top + heroRect.height / 2;
-  const navCenterX = navRect.left + navRect.width / 2;
-  const navCenterY = navRect.top + navRect.height / 2;
-
-  const translateX = navCenterX - heroCenterX;
-  const translateY = navCenterY - heroCenterY;
-  const scale = navRect.width / heroRect.width;
-
-  // Trigger transform on next frame
-  requestAnimationFrame(() => {
-    clone.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-    clone.style.opacity = '1';
-  });
-
-  clone.addEventListener('transitionend', function onEnd(e) {
-    // ensure we respond to the transform transition end
-    if (e.propertyName.indexOf('transform') === -1) return;
-    clone.removeEventListener('transitionend', onEnd);
-
-    // show navAvatar (small)
-    navAvatar.classList.add('visible');
-
-    // cleanup clone
-    clone.remove();
-
-    isShrunk = true;
-    animating = false;
-  });
-}
-
-function animateToHero() {
-  if (!isShrunk || animating) return;
-  const heroRect = heroImg.getBoundingClientRect();
-  const navRect = navAvatar.getBoundingClientRect();
-  animating = true;
-
-  // Create clone at nav position
-  const clone = navAvatar.cloneNode(true);
-  clone.style.position = 'fixed';
-  clone.style.left = `${navRect.left}px`;
-  clone.style.top = `${navRect.top}px`;
-  clone.style.width = `${navRect.width}px`;
-  clone.style.height = `${navRect.height}px`;
-  clone.style.borderRadius = '50%';
-  clone.style.objectFit = 'cover';
-  clone.style.zIndex = 9999;
-  clone.style.transition = 'transform 600ms cubic-bezier(.2,.8,.2,1), opacity 200ms';
-  document.body.appendChild(clone);
-
-  // hide nav avatar immediately
-  navAvatar.classList.remove('visible');
-
-  const navCenterX = navRect.left + navRect.width / 2;
-  const navCenterY = navRect.top + navRect.height / 2;
-  const heroCenterX = heroRect.left + heroRect.width / 2;
-  const heroCenterY = heroRect.top + heroRect.height / 2;
-
-  const translateX = heroCenterX - navCenterX;
-  const translateY = heroCenterY - navCenterY;
-  const scale = heroRect.width / navRect.width;
-
-  // Trigger transform
-  requestAnimationFrame(() => {
-    clone.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-  });
-
-  clone.addEventListener('transitionend', function onEnd(e) {
-    if (e.propertyName.indexOf('transform') === -1) return;
-    clone.removeEventListener('transitionend', onEnd);
-
-    // reveal original hero again
-    heroImg.style.visibility = 'visible';
-
-    clone.remove();
-    isShrunk = false;
-    animating = false;
-  });
-}
-
-// Determine threshold: when hero bottom passes navbar bottom
-function checkScroll() {
-  const heroRect = heroImg.getBoundingClientRect();
-  const navbarHeight = navbar.offsetHeight;
-  // When hero's bottom <= navbarHeight + small padding => animate to nav
-  if (heroRect.bottom <= navbarHeight + 8) {
-    animateToNav();
-  } else {
-    animateToHero();
-  }
-}
-
-// Init: make sure navAvatar has same src as hero (you can remove if already same)
-if (navAvatar && heroImg) {
-  navAvatar.src = heroImg.src;
-}
-
-// Throttle scroll to animation frames
-let ticking = false;
-window.addEventListener('scroll', () => {
-  if (!ticking) {
-    window.requestAnimationFrame(() => {
-      checkScroll();
-      ticking = false;
+        // Avatar Transition Logic
+        if (heroImg) {
+            const heroRect = heroImg.getBoundingClientRect();
+            if (heroRect.bottom < 80) {
+                navAvatarSlot.classList.add('visible');
+            } else {
+                navAvatarSlot.classList.remove('visible');
+            }
+        }
     });
-    ticking = true;
-  }
-}, { passive: true });
 
-// Also check on resize (positions change)
-window.addEventListener('resize', () => {
-  // if animation in progress we skip; otherwise re-evaluate
-  if (!animating) checkScroll();
+    // Mobile Menu Toggle
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+            const icon = mobileMenuBtn.querySelector('i');
+            if (navLinks.classList.contains('active')) {
+                icon.classList.replace('fa-bars', 'fa-times');
+            } else {
+                icon.classList.replace('fa-times', 'fa-bars');
+            }
+        });
+    }
+
+    // Smooth Scrolling for nav links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+            
+            if (targetElement) {
+                // Close mobile menu if open
+                if (navLinks.classList.contains('active')) {
+                    navLinks.classList.remove('active');
+                    mobileMenuBtn.querySelector('i').classList.replace('fa-times', 'fa-bars');
+                }
+
+                window.scrollTo({
+                    top: targetElement.offsetTop - 80,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+
+    // Form Submission
+    const contactForm = document.querySelector('.contact-form');
+    if (contactForm) {
+        contactForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Basic animation for button
+            const btn = contactForm.querySelector('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Sending... <i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            // Simulate form submission
+            setTimeout(() => {
+                alert('Thank you, ' + contactForm.name.value + '! Your message has been sent successfully.');
+                btn.innerHTML = 'Sent! <i class="fas fa-check"></i>';
+                contactForm.reset();
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 3000);
+            }, 1500);
+        });
+    }
+
+    // Add reveal animation on scroll (simple version)
+    const revealElements = document.querySelectorAll('.skill-card, .project-card, .section-title');
+    
+    const revealOnScroll = () => {
+        const triggerBottom = window.innerHeight * 0.8;
+        
+        revealElements.forEach(el => {
+            const elTop = el.getBoundingClientRect().top;
+            if (elTop < triggerBottom) {
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            }
+        });
+    };
+
+    // Initial styles for reveal elements
+    revealElements.forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'all 0.6s ease-out';
+    });
+
+    window.addEventListener('scroll', revealOnScroll);
+    revealOnScroll(); // Trigger once on load
 });
-
-// Small demo form submit
-document.querySelector('.contact-form')?.addEventListener('submit', (e) => {
-  e.preventDefault();
-  alert('Thank you! Your message has been sent.');
-});
-
-
-
